@@ -1,32 +1,325 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Bingo</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kade Bingo</title>
 
-    <style>
-        body{
-            background:#2b2d31;
-            color:white;
-            font-family:Arial, sans-serif;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            height:100vh;
-            margin:0;
-        }
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #3b1d63, #111318 55%);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
 
-        h1{
-            font-size:3rem;
-        }
-    </style>
+    h1 {
+      margin-bottom: 8px;
+      font-size: 2.4rem;
+      color: #ffffff;
+      text-shadow: 0 0 12px #8b5cf6;
+    }
 
+    .subtitle {
+      color: #c7c7d1;
+      margin-bottom: 22px;
+      font-size: 1rem;
+    }
+
+    .bingo-card {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .square {
+      background: rgba(35, 39, 52, 0.95);
+      border: 2px solid #7c3aed;
+      border-radius: 16px;
+      min-height: 145px;
+      padding: 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 0 14px rgba(124, 58, 237, 0.45);
+      transition: 0.2s ease;
+      user-select: none;
+    }
+
+    .square:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(88, 101, 242, 0.75);
+    }
+
+    .square.marked {
+      background: linear-gradient(135deg, #16803c, #22c55e);
+      border-color: #86efac;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.8);
+    }
+
+    .phrase {
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.3;
+    }
+
+    .time-row {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #eeeeee;
+    }
+
+    .time-input {
+      width: 85px;
+      padding: 6px;
+      border-radius: 8px;
+      border: none;
+      text-align: center;
+      font-size: 14px;
+      background: #ffffff;
+      color: #111318;
+    }
+
+    #message {
+      font-size: 26px;
+      margin: 24px 0;
+      font-weight: bold;
+      color: #ffd700;
+      min-height: 34px;
+      text-shadow: 0 0 12px rgba(255, 215, 0, 0.75);
+    }
+
+    .buttons {
+      margin-top: 12px;
+    }
+
+    button {
+      background: #5865f2;
+      color: white;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(88, 101, 242, 0.6);
+    }
+
+    button:hover {
+      background: #4752c4;
+    }
+
+    .small-note {
+      max-width: 720px;
+      margin: 18px auto 0;
+      color: #b5bac1;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .bingo-card {
+        gap: 8px;
+      }
+
+      .square {
+        min-height: 125px;
+        padding: 9px;
+      }
+
+      .phrase {
+        font-size: 13.5px;
+      }
+
+      .time-row {
+        font-size: 12px;
+      }
+
+      .time-input {
+        width: 62px;
+        padding: 5px;
+        font-size: 12px;
+      }
+
+      #message {
+        font-size: 20px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<h1> 🍿Kade Bingo Coming Soon! 🍿 </h1>
+  <h1>🏆 Kade Bingo</h1>
+  <p class="subtitle">
+    Tap a square when the quote is said or the action happens. Add the stream timestamp underneath.
+  </p>
+
+  <div class="bingo-card" id="bingoCard"></div>
+
+  <div id="message"></div>
+
+  <div class="buttons">
+    <button onclick="resetMarks()">Reset Marks</button>
+  </div>
+
+  <p class="small-note">
+    Bingo counts as any full row or full column. Diagonals do not count.
+  </p>
+
+  <script>
+    /*
+      Change this GAME_ID for future events.
+      Example: "kade-bingo-board-2-v1"
+      This forces everyone to receive a fresh shuffled card.
+    */
+    const GAME_ID = "kade-bingo-board-1-v1";
+
+    const phrases = [
+      "Goes to fill up water",
+      "Monster",
+      "Flying",
+      "Hit a T20",
+      "In the mixer",
+      "Straight Red",
+      "Giulangi Buffon",
+      "Over 120 on the dart board",
+      "No auctions"
+    ];
+
+    /*
+      Row or column only.
+      No diagonals.
+    */
+    const winningLines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8]
+    ];
+
+    const card = document.getElementById("bingoCard");
+    const message = document.getElementById("message");
+
+    let cardPhrases = [];
+    let markedSquares = [];
+    let timeValues = [];
+
+    function shuffleArray(array) {
+      const shuffled = [...array];
+
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const randomIndex = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+      }
+
+      return shuffled;
+    }
+
+    function loadOrCreateCard() {
+      const savedCard = localStorage.getItem(`${GAME_ID}-phrases`);
+      const savedMarks = localStorage.getItem(`${GAME_ID}-marks`);
+      const savedTimes = localStorage.getItem(`${GAME_ID}-times`);
+
+      if (savedCard) {
+        cardPhrases = JSON.parse(savedCard);
+      } else {
+        cardPhrases = shuffleArray(phrases);
+        localStorage.setItem(`${GAME_ID}-phrases`, JSON.stringify(cardPhrases));
+      }
+
+      markedSquares = savedMarks ? JSON.parse(savedMarks) : Array(9).fill(false);
+      timeValues = savedTimes ? JSON.parse(savedTimes) : Array(9).fill("");
+    }
+
+    function saveProgress() {
+      localStorage.setItem(`${GAME_ID}-marks`, JSON.stringify(markedSquares));
+      localStorage.setItem(`${GAME_ID}-times`, JSON.stringify(timeValues));
+    }
+
+    function createCard() {
+      card.innerHTML = "";
+
+      cardPhrases.forEach((phrase, index) => {
+        const square = document.createElement("div");
+        square.classList.add("square");
+
+        if (markedSquares[index]) {
+          square.classList.add("marked");
+        }
+
+        square.innerHTML = `
+          <div class="phrase">${phrase}</div>
+          <div class="time-row">
+            Time - 
+            <input 
+              class="time-input" 
+              type="text" 
+              placeholder="00:00"
+              value="${timeValues[index]}"
+            >
+          </div>
+        `;
+
+        square.addEventListener("click", function () {
+          markedSquares[index] = !markedSquares[index];
+          square.classList.toggle("marked");
+          saveProgress();
+          checkBingo();
+        });
+
+        const input = square.querySelector(".time-input");
+
+        input.addEventListener("click", function (event) {
+          event.stopPropagation();
+        });
+
+        input.addEventListener("input", function () {
+          timeValues[index] = input.value;
+          saveProgress();
+        });
+
+        card.appendChild(square);
+      });
+
+      checkBingo();
+    }
+
+    function checkBingo() {
+      const hasBingo = winningLines.some(line =>
+        line.every(index => markedSquares[index])
+      );
+
+      if (hasBingo) {
+        message.textContent = "🎉 BINGO! Type BINGO in Discord! 🎉";
+      } else {
+        message.textContent = "";
+      }
+    }
+
+    function resetMarks() {
+      markedSquares = Array(9).fill(false);
+      timeValues = Array(9).fill("");
+      saveProgress();
+      createCard();
+    }
+
+    loadOrCreateCard();
+    createCard();
+  </script>
 
 </body>
 </html>
